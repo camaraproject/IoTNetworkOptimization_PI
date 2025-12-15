@@ -1,0 +1,17 @@
+apiVersion: eventing.knative.dev/v1
+kind: Broker
+metadata:
+  annotations:
+    eventing.knative.dev/broker.class: RabbitMQBroker
+  name: {{ .Values.knative.broker.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  config:
+    apiVersion: eventing.knative.dev/v1alpha1
+    kind: RabbitmqBrokerConfig
+    name: {{ .Values.knative.rabbitmq.brokerConfig.name }}
+    namespace: {{ .Values.knative.namespace }}
+  delivery:
+    retry: {{ default 3 .Values.knative.broker.delivery.retry }}
+    backoffPolicy: {{ default "exponential" .Values.knative.broker.delivery.backoffPolicy }}
+    backoffDelay: {{ default "PT1S" .Values.knative.broker.delivery.backoffDelay }}

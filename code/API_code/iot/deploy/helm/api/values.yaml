@@ -1,0 +1,88 @@
+# Default values for camara-iot-api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: ghcr.io/your_repository/camara-iot-api
+  # This sets the pull policy for images.
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+
+# Services configuration
+services:
+  api:
+    name: iot-api
+    minScale: 1
+    maxScale: 5
+  scheduler:
+    name: iot-scheduler
+    minScale: 1
+    maxScale: 1
+  worker:
+    name: iot-worker
+    minScale: 1
+    maxScale: 10
+  notifier:
+    name: iot-notifier
+    minScale: 1
+    maxScale: 3
+    skipTlsVerify: false  # Set to true for dev/testing with self-signed certs
+
+knative:
+  broker:
+    name: iot-broker
+    class: RabbitMQBroker
+    delivery:
+      retry: 3
+      backoffPolicy: exponential
+      backoffDelay: PT1S
+  # Namespace where Knative services will be deployed, not where knative is installed
+  namespace: demo
+  triggers:
+    # Parallelism for RabbitMQ Triggers. When set >1 each Trigger creates N workers.
+    # Set to 1 to preserve ordering, increase for higher throughput.
+    parallelism: 3
+  rabbitmq:
+    brokerConfig:
+      name: iot-broker-config
+      # Queue type for Broker resources: quorum or classic (defaults quorum if omitted)
+      queueType: quorum
+      cluster:
+        name: my-rabbit
+        # Optional namespace override for the RabbitmqCluster (defaults to knative.namespace when empty)
+        namespace: ""
+
+logger:
+  level: info
+  format: json
+
+database:
+  name: iot
+  # MongoDB connection, remember to change the password 'CHANGEME'
+  uri: "mongodb://root:CHANGEME@mongo-mongodb.data.svc.cluster.local:27017"
+
+# EasyAPI configuration for device management
+# Leave baseUrl empty to use dummy client (no real API calls)
+easyAPI:
+  # Base URL for EasyAPI backend service (e.g., "http://easyapi-service:8080")
+  baseUrl: ""
+
+# Power Saving configuration for IoT devices
+powerSaving:
+  # Maximum latency value for power-saving mode (ppMaximumLatency)
+  maxLatency: "2"
+  # Maximum response time value for power-saving mode (ppMaximumResponseTime)
+  maxResponseTime: "2"
+
+# Transaction retention configuration
+retention:
+  # Period after which completed/failed transactions are deleted
+  # Format: Go duration string (e.g., "24h", "168h" for 7 days, "720h" for 30 days)
+  period: "24h"
+  # How often the cleanup job runs
+  cleanupInterval: "1h"

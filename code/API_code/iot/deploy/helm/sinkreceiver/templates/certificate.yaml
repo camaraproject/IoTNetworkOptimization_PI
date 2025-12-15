@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.service.name }}-tls
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ .Values.service.name }}-tls
+  duration: 8760h # 1 year
+  renewBefore: 720h # 30 days
+  subject:
+    organizations:
+      - {{ .Values.service.name }}
+  commonName: {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ .Values.service.name }}
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}
+    - {{ .Values.service.name }}.{{ .Release.Namespace }}.svc
+  issuerRef:
+    name: {{ .Values.service.name }}-selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
