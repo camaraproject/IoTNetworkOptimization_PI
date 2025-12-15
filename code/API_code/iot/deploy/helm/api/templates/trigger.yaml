@@ -1,0 +1,110 @@
+---
+# Trigger: route schedule.requested events to scheduler
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: schedule-requested-trigger
+  namespace: {{ .Values.knative.namespace }}
+  {{- if .Values.knative.triggers.parallelism }}
+  annotations:
+    rabbitmq.eventing.knative.dev/parallelism: "{{ .Values.knative.triggers.parallelism }}"
+  {{- end }}
+spec:
+  broker: {{ .Values.knative.broker.name }}
+  filter:
+    attributes:
+      type: it.tim.iot.schedule.requested
+      source: urn:tim:iot-api
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ .Values.services.scheduler.name }}
+---
+# Trigger: route device.actuation.request events to worker
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: device-actuation-trigger
+  namespace: {{ .Values.knative.namespace }}
+  {{- if .Values.knative.triggers.parallelism }}
+  annotations:
+    rabbitmq.eventing.knative.dev/parallelism: "{{ .Values.knative.triggers.parallelism }}"
+  {{- end }}
+spec:
+  broker: {{ .Values.knative.broker.name }}
+  filter:
+    attributes:
+      type: it.tim.iot.device.actuation.request
+      source: urn:tim:iot-scheduler
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ .Values.services.worker.name }}
+---
+# Trigger: route all-devices.completed events to notifier
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: all-devices-completed-notifier-trigger
+  namespace: {{ .Values.knative.namespace }}
+  {{- if .Values.knative.triggers.parallelism }}
+  annotations:
+    rabbitmq.eventing.knative.dev/parallelism: "{{ .Values.knative.triggers.parallelism }}"
+  {{- end }}
+spec:
+  broker: {{ .Values.knative.broker.name }}
+  filter:
+    attributes:
+      type: it.tim.iot.all-devices.completed
+      source: urn:tim:iot-worker
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ .Values.services.notifier.name }}
+---
+# Trigger: route all-devices.completed events to scheduler (for END timer arming)
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: all-devices-completed-scheduler-trigger
+  namespace: {{ .Values.knative.namespace }}
+  {{- if .Values.knative.triggers.parallelism }}
+  annotations:
+    rabbitmq.eventing.knative.dev/parallelism: "{{ .Values.knative.triggers.parallelism }}"
+  {{- end }}
+spec:
+  broker: {{ .Values.knative.broker.name }}
+  filter:
+    attributes:
+      type: it.tim.iot.all-devices.completed
+      source: urn:tim:iot-worker
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ .Values.services.scheduler.name }}
+---
+# Trigger: route power-saving.error events to notifier
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: power-saving-error-notifier-trigger
+  namespace: {{ .Values.knative.namespace }}
+  {{- if .Values.knative.triggers.parallelism }}
+  annotations:
+    rabbitmq.eventing.knative.dev/parallelism: "{{ .Values.knative.triggers.parallelism }}"
+  {{- end }}
+spec:
+  broker: {{ .Values.knative.broker.name }}
+  filter:
+    attributes:
+      type: it.tim.iot.notify.error.requested
+      source: urn:tim:iot-scheduler
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: {{ .Values.services.notifier.name }}

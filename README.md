@@ -33,5 +33,4 @@ To support the above intent one endpoint is provided:
 
 ## How to run service locally
 
-TBD
-
+For architecture details, full setup and deployment instructions, see [docs/README.md](code/API_code/iot/docs/README.md).

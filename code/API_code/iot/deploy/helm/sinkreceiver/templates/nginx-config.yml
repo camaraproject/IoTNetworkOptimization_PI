@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.service.name }}-nginx
+data:
+  default.conf: |
+    # HTTPS termination proxy for {{ .Values.service.name }}.
+    # NGINX loads files in /etc/nginx/conf.d inside the http{} context,
+    # so this must be a server{} block only (no 'events' or 'http' here).
+    server {
+      listen 8443 ssl;
+      ssl_certificate     /etc/tls/tls.crt;
+      ssl_certificate_key /etc/tls/tls.key;
+      location / {
+        proxy_pass http://127.0.0.1:{{ .Values.service.port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+      }
+    }
