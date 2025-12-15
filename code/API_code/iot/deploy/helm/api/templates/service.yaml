@@ -1,0 +1,168 @@
+---
+# API Service
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{ .Values.services.api.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "{{ .Values.services.api.minScale }}"
+        autoscaling.knative.dev/maxScale: "{{ .Values.services.api.maxScale }}"
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.image.repository }}/api:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http1
+          containerPort: 8080
+          protocol: TCP
+        envFrom:
+          - configMapRef:
+              name: iot-db-config
+          - secretRef:
+              name: iot-db
+        env:
+          - name: API_ADDRESS
+            value: "0.0.0.0:8080"
+          - name: LOG_LEVEL
+            value: {{ .Values.logger.level }}
+          - name: LOG_FORMAT
+            value: {{ .Values.logger.format }}
+          - name: K_SINK
+            value: http://{{ .Values.knative.broker.name }}-broker-ingress.{{ .Values.knative.namespace }}.svc.cluster.local
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http1
+          initialDelaySeconds: 2
+          periodSeconds: 10
+---
+# Scheduler Service
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{ .Values.services.scheduler.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "{{ .Values.services.scheduler.minScale }}"
+        autoscaling.knative.dev/maxScale: "{{ .Values.services.scheduler.maxScale }}"
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.image.repository }}/scheduler:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: iot-db-config
+          - secretRef:
+              name: iot-db
+        env:
+          - name: API_ADDRESS
+            value: "0.0.0.0:8080"
+          - name: LOG_LEVEL
+            value: {{ .Values.logger.level }}
+          - name: LOG_FORMAT
+            value: {{ .Values.logger.format }}
+          - name: K_SINK
+            value: http://{{ .Values.knative.broker.name }}-broker-ingress.{{ .Values.knative.namespace }}.svc.cluster.local
+          - name: RETENTION_PERIOD
+            value: "{{ .Values.retention.period }}"
+          - name: RETENTION_CLEANUP_INTERVAL
+            value: "{{ .Values.retention.cleanupInterval }}"
+---
+# Worker Service
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{ .Values.services.worker.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "{{ .Values.services.worker.minScale }}"
+        autoscaling.knative.dev/maxScale: "{{ .Values.services.worker.maxScale }}"
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.image.repository }}/worker:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: iot-db-config
+          - secretRef:
+              name: iot-db
+        env:
+          - name: API_ADDRESS
+            value: "0.0.0.0:8080"
+          - name: LOG_LEVEL
+            value: {{ .Values.logger.level }}
+          - name: LOG_FORMAT
+            value: {{ .Values.logger.format }}
+          - name: K_SINK
+            value: http://{{ .Values.knative.broker.name }}-broker-ingress.{{ .Values.knative.namespace }}.svc.cluster.local
+          {{- if .Values.easyAPI.baseUrl }}
+          - name: EASYAPI_BASE_URL
+            value: {{ .Values.easyAPI.baseUrl }}
+          {{- end }}
+          - name: POWERSAVING_MAX_LATENCY
+            value: "{{ .Values.powerSaving.maxLatency }}"
+          - name: POWERSAVING_MAX_RESPONSE_TIME
+            value: "{{ .Values.powerSaving.maxResponseTime }}"
+---
+# Notifier Service
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: {{ .Values.services.notifier.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "{{ .Values.services.notifier.minScale }}"
+        autoscaling.knative.dev/maxScale: "{{ .Values.services.notifier.maxScale }}"
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - image: {{ .Values.image.repository }}/notifier:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: iot-db-config
+          - secretRef:
+              name: iot-db
+        env:
+          - name: API_ADDRESS
+            value: "0.0.0.0:8080"
+          - name: LOG_LEVEL
+            value: {{ .Values.logger.level }}
+          - name: LOG_FORMAT
+            value: {{ .Values.logger.format }}
+          - name: HTTP_INSECURE_SKIP_VERIFY
+            value: "{{ .Values.services.notifier.skipTlsVerify }}"

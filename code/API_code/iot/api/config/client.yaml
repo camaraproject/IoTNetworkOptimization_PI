@@ -1,0 +1,9 @@
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+package: client
+output: client/client.gen.go
+additional-imports:
+  - package: github.com/camaraproject/IoTNetworkOptimization_PI/code/API_code/iot/api/models
+    alias: .
+generate:
+  client: true

@@ -1,0 +1,4 @@
+image:
+  tag: "pr-1"
+imagePullSecrets:
+  - name: ghcr-pull

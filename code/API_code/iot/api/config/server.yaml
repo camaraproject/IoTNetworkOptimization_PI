@@ -1,0 +1,9 @@
+package: server
+output: server/server.gen.go
+additional-imports:
+  - package: github.com/camaraproject/IoTNetworkOptimization_PI/code/API_code/iot/api/models
+    alias: .
+generate:
+  echo-server: true
+  strict-server: true
+  embedded-spec: true

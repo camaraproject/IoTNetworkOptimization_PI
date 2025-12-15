@@ -1,0 +1,12 @@
+apiVersion: eventing.knative.dev/v1alpha1
+kind: RabbitmqBrokerConfig
+metadata:
+  name: {{ .Values.knative.rabbitmq.brokerConfig.name }}
+  namespace: {{ .Values.knative.namespace }}
+spec:
+  rabbitmqClusterReference:
+    name: {{ .Values.knative.rabbitmq.brokerConfig.cluster.name }}
+    namespace: {{ default .Values.knative.namespace .Values.knative.rabbitmq.brokerConfig.cluster.namespace }}
+  {{- if .Values.knative.rabbitmq.brokerConfig.queueType }}
+  queueType: {{ .Values.knative.rabbitmq.brokerConfig.queueType }}
+  {{- end }}

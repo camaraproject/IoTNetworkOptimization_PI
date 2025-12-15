@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  replicas: {{ .Values.service.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.service.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.service.name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - name: {{ .Values.service.name }}
+        image: {{ .Values.image.repository }}/sinkreceiver:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: PORT
+            value: "{{ .Values.service.port }}"
+          - name: LOG_LEVEL
+            value: {{ .Values.logger.level }}
+          - name: LOG_FORMAT
+            value: {{ .Values.logger.format }}
+        ports:
+          - containerPort: {{ .Values.service.port }}
+      - name: tls-proxy
+        image: nginx:1.25-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: https
+            containerPort: 8443
+        readinessProbe:
+          tcpSocket:
+            port: https
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        args:
+          - nginx
+          - -g
+          - daemon off;
+        volumeMounts:
+          - name: tls-secret
+            mountPath: /etc/tls
+            readOnly: true
+          - name: nginx-config
+            mountPath: /etc/nginx/conf.d
+            readOnly: true
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: {{ .Values.service.name }}-tls
+        - name: nginx-config
+          configMap:
+            name: {{ .Values.service.name }}-nginx

@@ -1,0 +1,9 @@
+package: models
+output: models/models.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true
+  exclude-schemas: [SinkCredential, SubscriptionRequest, HTTPSubscriptionRequest]
+# NOTE: SinkCredential & SubscriptionRequest excluded; manual polymorphic implementations in
+#       models/subscriptionrequest_manual.go (credentialType & protocol discriminators).
